@@ -1,0 +1,33 @@
+
+This sample plugin shows how to combine Orthanc with the dcm4che
+library. To run this sample Java plugin:
+
+
+(1) Make sure to build the C++ plugin:
+
+# cd ../../Plugin/
+# mkdir Build
+# cd Build
+# cmake .. -DCMAKE_BUILD_TYPE=Release
+# make -j4
+
+
+(2) Compile the Java plugin using Maven:
+
+# cd ../../Samples/Dcm4Che
+# mvn compile package
+
+
+(3) Start Orthanc:
+
+On Ubuntu 20.04 or 22.04 (replace "mainline" with the version of the
+Java plugin for Orthanc):
+
+# LD_LIBRARY_PATH=/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server/ \
+  ORTHANC_JAVA_VERSION=mainline \
+  Orthanc ./configuration.json
+
+
+(4) Send an arbitrary DICOM file to Java:
+
+# curl http://localhost:8042/dcm4che-parse --data-binary @sample.dcm
