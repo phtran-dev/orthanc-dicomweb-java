@@ -77,7 +77,7 @@
   </build>
 
   <groupId>OrthancJava</groupId>
-  <artifactId>OrthancDcm4Che</artifactId>
+  <artifactId>OrthancJavaPlugin</artifactId>
   <version>${orthanc_java.version}</version>
 
   <repositories>

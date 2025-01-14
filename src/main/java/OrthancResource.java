@@ -95,7 +95,11 @@ public class OrthancResource {
                                        JSONObject source) {
         for (String key : source.keySet()) {
             Functions.logInfo("PHONG dic key=" + key);
-            target.put(key, source.getString(key));
+            Object value = source.get(key);
+            if (value instanceof String)
+            {
+                target.put(key, source.getString(key));
+            }
         }
     }
 
