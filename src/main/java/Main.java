@@ -14,7 +14,6 @@ public class Main {
 
     static {
         Callbacks.register(DicomWebConfiguration.getInstance().getDicomWebRoot() + "studies/(.*)/series/(.*)/thumbnail", (output, method, uri, regularExpressionGroups, headers, getParameters, body) -> {
-
             if (method != HttpMethod.GET) {
                 output.sendMethodNotAllowed("GET");  // Answer with HTTP status 405
                 return;
@@ -23,8 +22,9 @@ public class Main {
             String seriesIUID = regularExpressionGroups[1];
 
             Viewport vp = new Viewport(getParameters.getOrDefault("viewport", "128,128"));
-
+            long now = System.currentTimeMillis();
             List<OrthancResource> seriesResources = OrthancResource.find(ResourceType.SERIES, Collections.singletonMap("SeriesInstanceUID", seriesIUID), true, true, 0, 1);
+            Functions.logInfo("[SeriesThumbnail][Series-" + seriesIUID + "] tools/find takes: " + (System.currentTimeMillis() - now) + " ms");
             if (seriesResources.isEmpty()) {
                 output.sendHttpStatus((short) 404, String.format("Cannot find SeriesInstanceUID: %s", seriesIUID).getBytes());
             }
@@ -40,23 +40,28 @@ public class Main {
 
 
             String instanceResourceId = instanceResourceIds.get(instanceResourceIds.size() / 2);
-
+            now = System.currentTimeMillis();
             boolean transcoded;
             {
                 String transferSyntax = new String(Functions.restApiGet("/instances/" + instanceResourceId + "/metadata/TransferSyntax"));
-                Functions.logInfo("PHONG transferSyntax=" + transferSyntax);
                 transcoded = !(UID.ExplicitVRLittleEndian.equals(transferSyntax) || UID.ImplicitVRLittleEndian.equals(transferSyntax));
+                Functions.logInfo("[SeriesThumbnail][Series-" + seriesIUID + "] TransferSyntax " + transferSyntax + " takes: " + (System.currentTimeMillis() - now) + " ms");
             }
+
 
             JSONObject request = new JSONObject();
             request.put("Transcode", UID.ExplicitVRLittleEndian);
-
+            now = System.currentTimeMillis();
             byte[] dicom = transcoded ? Functions.restApiPost("/instances/" + instanceResourceId + "/modify", request.toString().getBytes(StandardCharsets.UTF_8)) :
                 Functions.restApiGet("/instances/" + instanceResourceId + "/file");
+            Functions.logInfo("[SeriesThumbnail][Series-" + seriesIUID + "] GetDicom " + instanceResourceId + " takes: " + (System.currentTimeMillis() - now) + " ms");
+
+            now = System.currentTimeMillis();
             RenderedImageOutput rio = new RenderedImageOutput(dicom, vp.getRows(), vp.getColumns(), MediaTypes.IMAGE_JPEG_TYPE, "90", 1);
 
             try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
                 rio.write(out);
+                Functions.logInfo("[SeriesThumbnail][Series-" + seriesIUID + "] Rendered " + instanceResourceId + " takes: " + (System.currentTimeMillis() - now) + " ms");
                 output.answerBuffer(out.toByteArray(), MediaTypes.IMAGE_JPEG);
             } catch (Exception e) {
                 Functions.logInfo(e.getMessage());

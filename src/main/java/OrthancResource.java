@@ -173,6 +173,8 @@ public class OrthancResource {
                 throw new RuntimeException();
         }
 
+        Functions.logInfo("OrthancResource tools/find reqquest=" + request);
+
         byte[] response = Functions.restApiPost("/tools/find", request.toString().getBytes(StandardCharsets.UTF_8));
 
         JSONArray arr = new JSONArray(new String(response, StandardCharsets.UTF_8));
